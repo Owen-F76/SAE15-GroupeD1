@@ -33,19 +33,12 @@ SAE15-GroupeD1/
 
 
 
-         Outil
-       Rôle
-      Nécessité
-       Python 3
-Exécution du programme
-      Obligatoire
-        PandasLecture, nettoyage et agrégation des données
-      Obligatoire
-      Matplotlib
-Création des graphiques
-      Obligatoire
-        pathlibGestion des chemins de fichiers
-  Inclus dans Python
+| Outil | Rôle | Nécessité |
+| --- | --- | --- |
+| Python 3 | Exécution du programme | Obligatoire |
+| Pandas | Lecture, nettoyage et agrégation des données | Obligatoire |
+| Matplotlib | Création des graphiques | Obligatoire |
+| pathlib | Gestion des chemins de fichiers | Inclus dans Python |
 
 
 
