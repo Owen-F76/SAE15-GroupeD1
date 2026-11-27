@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 
 dossier_data = Path.cwd() / "data"
 
+# dossier de sortie (cree s'il n'existe pas)
+dossier_resultat = Path.cwd() / "resultat"
+dossier_resultat.mkdir(exist_ok=True)
+
 fichiers = {
     "antenne": "sup_antenne.txt",
     "bande": "sup_bande.txt",
@@ -12,7 +16,7 @@ fichiers = {
     "support": "sup_support.txt",
 }
 
-# 1. chargement + nettoyage
+# 1. chargement + nettoyage (version 1)
 
 # chargement + suppression des lignes vides
 donnees = {}
@@ -82,19 +86,11 @@ donnees_emetteur["technologie"] = donnees_emetteur["EMR_LB_SYSTEME"].apply(
 
 # 3. analyse 1 : repartition par departement
 
-print("\n----------------------------------------------")
-print("analyse 1 : repartition par departement")
-print("----------------------------------------------")
-
 repartition = (
     donnees_geo.groupby("COM_CD_INSEE")["STA_NM_ANFR"]
     .nunique()
     .sort_values(ascending=False)
 )
-
-print(repartition.to_string())
-
-print("\nles departements sont classes selon leur nombre d'installations.")
 
 # graphique des 10 premiers departements
 repartition.head(10).plot(kind="bar", figsize=(10, 5))
@@ -103,14 +99,11 @@ plt.title("Les 10 départements ayant le plus d'installations")
 plt.xlabel("Département")
 plt.ylabel("Nombre d'installations")
 plt.tight_layout()
-plt.show()
+plt.savefig(dossier_resultat / "analyse1_departements.png", dpi=150)
+plt.close()
 
 
 # 4. analyse 2 : technologies utilisees
-
-print("\n----------------------------------------------")
-print("analyse 2 : technologies utilisees")
-print("----------------------------------------------")
 
 technologies = (
     donnees_emetteur[donnees_emetteur["technologie"].isin(["2G", "3G", "4G", "5G"])]
@@ -119,24 +112,17 @@ technologies = (
     .reindex(["2G", "3G", "4G", "5G"], fill_value=0)
 )
 
-print(technologies.to_string())
-
-print("\ncette analyse permet de comparer la presence des quatre technologies.")
-
 technologies.plot(kind="bar", figsize=(8, 5))
 
 plt.title("Répartition des installations par technologie")
 plt.xlabel("Technologie")
 plt.ylabel("Nombre de stations")
 plt.tight_layout()
-plt.show()
+plt.savefig(dossier_resultat / "analyse2_technologies.png", dpi=150)
+plt.close()
 
 
 # 5. analyse 3 : evolution dans le temps
-
-print("\n----------------------------------------------")
-print("analyse 3 : evolution dans le temps")
-print("----------------------------------------------")
 
 donnees_emetteur["date_service"] = pd.to_datetime(
     donnees_emetteur["EMR_DT_SERVICE"],
@@ -150,6 +136,10 @@ if not donnees_dates.empty:
 
     donnees_dates["annee"] = donnees_dates["date_service"].dt.year
 
+    # on ignore les dates aberrantes (ex: annee 25) et les dates futures
+    annee_actuelle = pd.Timestamp.now().year
+    donnees_dates = donnees_dates[donnees_dates["annee"].between(1990, annee_actuelle)]
+
     evolution = pd.crosstab(
         donnees_dates["annee"],
         donnees_dates["technologie"]
@@ -160,29 +150,18 @@ if not donnees_dates.empty:
         fill_value=0
     )
 
-    print(evolution.to_string())
-
-    print("\nce graphique presente l'evolution des technologies selon les dates disponibles.")
-
-    evolution.plot(figsize=(10, 5), marker="o")
+    evolution.plot(figsize=(12, 6), marker="o")
 
     plt.title("Evolution des technologies dans le temps")
     plt.xlabel("Année")
     plt.ylabel("Nombre d'émetteurs")
     plt.legend(title="Technologie")
     plt.tight_layout()
-    plt.show()
-
-else:
-    print("les dates de mise en service ne sont pas exploitables.")
-    print("il n'est donc pas possible de presenter une evolution fiable.")
+    plt.savefig(dossier_resultat / "analyse3_evolution.png", dpi=150)
+    plt.close()
 
 
 # 6. analyse 4 : classement des exploitants
-
-print("\n----------------------------------------------")
-print("analyse 4 : classement des exploitants")
-print("----------------------------------------------")
 
 classement = (
     donnees_geo.groupby("ADM_ID")["STA_NM_ANFR"]
@@ -199,16 +178,15 @@ resultat_classement = pd.DataFrame({
     "part_total_pct": parts.round(2)
 })
 
-print(resultat_classement.to_string())
-
-print("\nce classement permet de comparer le nombre d'installations par exploitant.")
+# enregistrement du classement dans un fichier au format csv
+resultat_classement.to_csv(
+    dossier_resultat / "analyse4_classement_exploitants.txt",
+    sep=";",
+    encoding="utf-8"
+)
 
 
 # 7. analyse 5 : exploitants et technologies
-
-print("\n----------------------------------------------")
-print("analyse 5 : exploitants et technologies")
-print("----------------------------------------------")
 
 comparaison = pd.crosstab(
     donnees_emetteur["ADM_ID"],
@@ -222,18 +200,18 @@ comparaison = comparaison.reindex(
     fill_value=0
 )
 
-print(comparaison.to_string())
+# on garde les 10 exploitants ayant le plus d'installations (voir analyse 4)
+comparaison.index = comparaison.index.astype(int)
+top_exploitants = classement.head(10).index.astype(int)
+comparaison = comparaison.reindex(top_exploitants, fill_value=0)
 
-print("\ncette comparaison montre les technologies presentes chez chaque exploitant.")
+comparaison.plot(kind="bar", figsize=(12, 6))
 
-comparaison.plot(kind="bar", figsize=(11, 6))
-
-plt.title("Technologies utilisées par exploitant")
-plt.xlabel("Exploitant")
+plt.title("Technologies utilisées par les 10 plus gros exploitants")
+plt.xlabel("Exploitant (ADM_ID)")
+plt.xticks(rotation=0)
 plt.ylabel("Nombre de stations")
 plt.legend(title="Technologie")
 plt.tight_layout()
-plt.show()
-
-
-print("      \n FIN DES CINQ ANALYSES")
+plt.savefig(dossier_resultat / "analyse5_exploitants_technologies.png", dpi=150)
+plt.close()
