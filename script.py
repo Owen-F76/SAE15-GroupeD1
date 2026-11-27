@@ -1,43 +1,61 @@
-# SAE 15 - VERSION 2
-# ANALYSE DES INSTALLATIONS RADIOELECTRIQUES DE L'ANFR
-
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# 1. CHARGEMENT DES DONNEES
+dossier_data = Path.cwd() / "data"
 
-DOSSIER = Path(__file__).resolve().parent
-DATA = DOSSIER / "data"
+fichiers = {
+    "antenne": "sup_antenne.txt",
+    "bande": "sup_bande.txt",
+    "emetteur": "sup_emetteur.txt",
+    "station": "sup_station.txt",
+    "support": "sup_support.txt",
+}
 
-station = pd.read_csv(DATA / "sup_station.txt", sep=";", low_memory=False)
-support = pd.read_csv(DATA / "sup_support.txt", sep=";", low_memory=False)
-emetteur = pd.read_csv(DATA / "sup_emetteur.txt", sep=";", low_memory=False)
+# 1. chargement + nettoyage
 
-print("       SAE 15 - PRESENTATION VERSION 2")
+# chargement + suppression des lignes vides
+donnees = {}
+for nom, nom_fichier in fichiers.items():
+    tableau = pd.read_csv(dossier_data / nom_fichier, sep=";", low_memory=False)
+    donnees[nom] = tableau.dropna(how="all")
+    print(f"{nom}: {len(tableau)} lignes, {len(tableau) - len(donnees[nom])} vides supprimees")
 
-print("\nLes données de l'ANFR ont été chargées.")
-print("Nous allons présenter les cinq analyses demandées.")
+# suppression des supports sans coordonnees
+colonnes_coord = [
+    "COR_NB_DG_LAT", "COR_NB_MN_LAT", "COR_NB_SC_LAT",
+    "COR_NB_DG_LON", "COR_NB_MN_LON", "COR_NB_SC_LON",
+]
+support = donnees["support"].copy()
+support[colonnes_coord] = support[colonnes_coord].apply(pd.to_numeric, errors="coerce")
+
+nb_avant = len(support)
+support = support.dropna(subset=colonnes_coord)
+print(f"coordonnees manquantes supprimees: {nb_avant - len(support)}")
+print("supports valides:", len(support))
+
+station = donnees["station"]
+emetteur = donnees["emetteur"]
 
 
-# 2. PREPARATION DES DONNEES
+# 2. preparation des donnees
 
-# Association des stations avec leurs départements
+# association des stations avec leurs departements
 donnees_geo = station.merge(
     support[["STA_NM_ANFR", "COM_CD_INSEE"]],
     on="STA_NM_ANFR",
     how="left"
 )
 
-# Association des émetteurs avec les exploitants
-donnees = emetteur.merge(
+# association des emetteurs avec les exploitants
+donnees_emetteur = emetteur.merge(
     station[["STA_NM_ANFR", "ADM_ID"]],
     on="STA_NM_ANFR",
     how="left"
 )
 
 
-# Identification des technologies
+# identification des technologies
 def identifier_technologie(systeme):
 
     systeme = str(systeme).upper()
@@ -54,18 +72,18 @@ def identifier_technologie(systeme):
     elif any(mot in systeme for mot in ["GSM", "GPRS", "EDGE"]):
         return "2G"
 
-    return "Autre"
+    return "autre"
 
 
-donnees["technologie"] = donnees["EMR_LB_SYSTEME"].apply(
+donnees_emetteur["technologie"] = donnees_emetteur["EMR_LB_SYSTEME"].apply(
     identifier_technologie
 )
 
 
-# 3. ANALYSE 1 : REPARTITION PAR DEPARTEMENT
+# 3. analyse 1 : repartition par departement
 
 print("\n----------------------------------------------")
-print("ANALYSE 1 : REPARTITION PAR DEPARTEMENT")
+print("analyse 1 : repartition par departement")
 print("----------------------------------------------")
 
 repartition = (
@@ -76,9 +94,9 @@ repartition = (
 
 print(repartition.to_string())
 
-print("\nLes départements sont classés selon leur nombre d'installations.")
+print("\nles departements sont classes selon leur nombre d'installations.")
 
-# Graphique des 10 premiers départements
+# graphique des 10 premiers departements
 repartition.head(10).plot(kind="bar", figsize=(10, 5))
 
 plt.title("Les 10 départements ayant le plus d'installations")
@@ -88,14 +106,14 @@ plt.tight_layout()
 plt.show()
 
 
-# 4. ANALYSE 2 : TECHNOLOGIES UTILISEES
+# 4. analyse 2 : technologies utilisees
 
 print("\n----------------------------------------------")
-print("ANALYSE 2 : TECHNOLOGIES UTILISEES")
+print("analyse 2 : technologies utilisees")
 print("----------------------------------------------")
 
 technologies = (
-    donnees[donnees["technologie"].isin(["2G", "3G", "4G", "5G"])]
+    donnees_emetteur[donnees_emetteur["technologie"].isin(["2G", "3G", "4G", "5G"])]
     .groupby("technologie")["STA_NM_ANFR"]
     .nunique()
     .reindex(["2G", "3G", "4G", "5G"], fill_value=0)
@@ -103,7 +121,7 @@ technologies = (
 
 print(technologies.to_string())
 
-print("\nCette analyse permet de comparer la présence des quatre technologies.")
+print("\ncette analyse permet de comparer la presence des quatre technologies.")
 
 technologies.plot(kind="bar", figsize=(8, 5))
 
@@ -114,19 +132,19 @@ plt.tight_layout()
 plt.show()
 
 
-# 5. ANALYSE 3 : EVOLUTION DANS LE TEMPS
+# 5. analyse 3 : evolution dans le temps
 
 print("\n----------------------------------------------")
-print("ANALYSE 3 : EVOLUTION DANS LE TEMPS")
+print("analyse 3 : evolution dans le temps")
 print("----------------------------------------------")
 
-donnees["date_service"] = pd.to_datetime(
-    donnees["EMR_DT_SERVICE"],
+donnees_emetteur["date_service"] = pd.to_datetime(
+    donnees_emetteur["EMR_DT_SERVICE"],
     errors="coerce",
     dayfirst=True
 )
 
-donnees_dates = donnees.dropna(subset=["date_service"]).copy()
+donnees_dates = donnees_emetteur.dropna(subset=["date_service"]).copy()
 
 if not donnees_dates.empty:
 
@@ -144,7 +162,7 @@ if not donnees_dates.empty:
 
     print(evolution.to_string())
 
-    print("\nCe graphique présente l'évolution des technologies selon les dates disponibles.")
+    print("\nce graphique presente l'evolution des technologies selon les dates disponibles.")
 
     evolution.plot(figsize=(10, 5), marker="o")
 
@@ -156,15 +174,15 @@ if not donnees_dates.empty:
     plt.show()
 
 else:
-    print("Les dates de mise en service ne sont pas exploitables.")
-    print("Il n'est donc pas possible de présenter une évolution fiable.")
+    print("les dates de mise en service ne sont pas exploitables.")
+    print("il n'est donc pas possible de presenter une evolution fiable.")
 
 
-
-# 6. ANALYSE 4 : CLASSEMENT DES EXPLOITANTS
+# 6. analyse 4 : classement des exploitants
 
 print("\n----------------------------------------------")
-print("ANALYSE 4 : CLASSEMENT DES EXPLOITANTS")
+print("analyse 4 : classement des exploitants")
+print("----------------------------------------------")
 
 classement = (
     donnees_geo.groupby("ADM_ID")["STA_NM_ANFR"]
@@ -177,26 +195,25 @@ total = donnees_geo["STA_NM_ANFR"].nunique()
 parts = classement / total * 100
 
 resultat_classement = pd.DataFrame({
-    "Nombre d'installations": classement,
-    "Part du total (%)": parts.round(2)
+    "nombre_installations": classement,
+    "part_total_pct": parts.round(2)
 })
 
 print(resultat_classement.to_string())
 
-print("\nCe classement permet de comparer le nombre d'installations par exploitant.")
+print("\nce classement permet de comparer le nombre d'installations par exploitant.")
 
 
-# 7. ANALYSE 5 : EXPLOITANTS ET TECHNOLOGIES
-
+# 7. analyse 5 : exploitants et technologies
 
 print("\n----------------------------------------------")
-print("ANALYSE 5 : EXPLOITANTS ET TECHNOLOGIES")
-
+print("analyse 5 : exploitants et technologies")
+print("----------------------------------------------")
 
 comparaison = pd.crosstab(
-    donnees["ADM_ID"],
-    donnees["technologie"],
-    values=donnees["STA_NM_ANFR"],
+    donnees_emetteur["ADM_ID"],
+    donnees_emetteur["technologie"],
+    values=donnees_emetteur["STA_NM_ANFR"],
     aggfunc=pd.Series.nunique
 ).fillna(0).astype(int)
 
@@ -207,7 +224,7 @@ comparaison = comparaison.reindex(
 
 print(comparaison.to_string())
 
-print("\nCette comparaison montre les technologies présentes chez chaque exploitant.")
+print("\ncette comparaison montre les technologies presentes chez chaque exploitant.")
 
 comparaison.plot(kind="bar", figsize=(11, 6))
 
@@ -218,8 +235,5 @@ plt.legend(title="Technologie")
 plt.tight_layout()
 plt.show()
 
-
-
-# 8. FIN DE LA PRESENTATION
 
 print("      \n FIN DES CINQ ANALYSES")
