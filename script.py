@@ -1,15 +1,11 @@
-# ============================================================
 # SAE 15 - VERSION 2
 # ANALYSE DES INSTALLATIONS RADIOELECTRIQUES DE L'ANFR
-# ============================================================
 
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# ------------------------------------------------------------
 # 1. CHARGEMENT DES DONNEES
-# ------------------------------------------------------------
 
 DOSSIER = Path(__file__).resolve().parent
 DATA = DOSSIER / "data"
@@ -18,17 +14,13 @@ station = pd.read_csv(DATA / "sup_station.txt", sep=";", low_memory=False)
 support = pd.read_csv(DATA / "sup_support.txt", sep=";", low_memory=False)
 emetteur = pd.read_csv(DATA / "sup_emetteur.txt", sep=";", low_memory=False)
 
-print("\n==============================================")
 print("       SAE 15 - PRESENTATION VERSION 2")
-print("==============================================")
 
 print("\nLes données de l'ANFR ont été chargées.")
 print("Nous allons présenter les cinq analyses demandées.")
 
 
-# ------------------------------------------------------------
 # 2. PREPARATION DES DONNEES
-# ------------------------------------------------------------
 
 # Association des stations avec leurs départements
 donnees_geo = station.merge(
@@ -70,9 +62,7 @@ donnees["technologie"] = donnees["EMR_LB_SYSTEME"].apply(
 )
 
 
-# ------------------------------------------------------------
 # 3. ANALYSE 1 : REPARTITION PAR DEPARTEMENT
-# ------------------------------------------------------------
 
 print("\n----------------------------------------------")
 print("ANALYSE 1 : REPARTITION PAR DEPARTEMENT")
@@ -98,9 +88,7 @@ plt.tight_layout()
 plt.show()
 
 
-# ------------------------------------------------------------
 # 4. ANALYSE 2 : TECHNOLOGIES UTILISEES
-# ------------------------------------------------------------
 
 print("\n----------------------------------------------")
 print("ANALYSE 2 : TECHNOLOGIES UTILISEES")
@@ -126,9 +114,7 @@ plt.tight_layout()
 plt.show()
 
 
-# ------------------------------------------------------------
 # 5. ANALYSE 3 : EVOLUTION DANS LE TEMPS
-# ------------------------------------------------------------
 
 print("\n----------------------------------------------")
 print("ANALYSE 3 : EVOLUTION DANS LE TEMPS")
@@ -174,13 +160,11 @@ else:
     print("Il n'est donc pas possible de présenter une évolution fiable.")
 
 
-# ------------------------------------------------------------
+
 # 6. ANALYSE 4 : CLASSEMENT DES EXPLOITANTS
-# ------------------------------------------------------------
 
 print("\n----------------------------------------------")
 print("ANALYSE 4 : CLASSEMENT DES EXPLOITANTS")
-print("----------------------------------------------")
 
 classement = (
     donnees_geo.groupby("ADM_ID")["STA_NM_ANFR"]
@@ -202,13 +186,12 @@ print(resultat_classement.to_string())
 print("\nCe classement permet de comparer le nombre d'installations par exploitant.")
 
 
-# ------------------------------------------------------------
 # 7. ANALYSE 5 : EXPLOITANTS ET TECHNOLOGIES
-# ------------------------------------------------------------
+
 
 print("\n----------------------------------------------")
 print("ANALYSE 5 : EXPLOITANTS ET TECHNOLOGIES")
-print("----------------------------------------------")
+
 
 comparaison = pd.crosstab(
     donnees["ADM_ID"],
@@ -236,10 +219,7 @@ plt.tight_layout()
 plt.show()
 
 
-# ------------------------------------------------------------
-# 8. FIN DE LA PRESENTATION
-# ------------------------------------------------------------
 
-print("\n==============================================")
-print("       FIN DES CINQ ANALYSES")
-print("==============================================")
+# 8. FIN DE LA PRESENTATION
+
+print("      \n FIN DES CINQ ANALYSES")
