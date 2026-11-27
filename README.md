@@ -1,8 +1,10 @@
-﻿# SAE15-GroupeD1
-Projet en groupe sur la SAE15 ( Traitement de données ) 
+﻿# SAÉ 1.5 — Traitement de données ANFR
+
+**Groupe D1 | BUT Réseaux et Télécommunications | Python**
 
 
-Présentation
+## 1. Présentation
+
 Ce projet consiste à analyser les données de l'ANFR sur les installations radioélectriques à l'aide de Python et de Pandas.
 Le programme permet de réaliser cinq analyses :
 
@@ -12,8 +14,43 @@ L'évolution des technologies au fil des années.
 Le classement des exploitants selon le nombre d'installations.
 La comparaison des exploitants et des technologies.
 
+## 2. Structure du projet
 
-Comment lancer le programme ?
+SAE15-GroupeD1/
+├── README.md           
+├── script.py           
+└── data/               
+    ├── sup_antenne.txt
+    ├── sup_bande.txt
+    ├── sup_emetteur.txt
+    ├── sup_station.txt
+    └── sup_support.txt
+
+
+## 3. Installation et utilisation
+
+### 3.1. Prérequis
+
+
+
+         Outil
+       Rôle
+      Nécessité
+       Python 3
+Exécution du programme
+      Obligatoire
+        PandasLecture, nettoyage et agrégation des données
+      Obligatoire
+      Matplotlib
+Création des graphiques
+      Obligatoire
+        pathlibGestion des chemins de fichiers
+  Inclus dans Python
+
+
+
+
+### 3.2. Récupérer le projet
 
 1. Cloner le dépôt GitHub
 Ouvrir un terminal et exécuter la commande suivante :
@@ -30,25 +67,10 @@ Dans le terminal, exécuter :
 pip install pandas matplotlib
 
 4. Lancer le programme
-Exécuter la commande :
-python script.py
 
 
 
-Organisation des fichiers
-
-script.py : contient le programme Python.
-data/ : contient les fichiers de données de l'ANFR.
-
-Important : ne pas déplacer le dossier data et ne pas modifier les noms des fichiers, sinon le programme risque de ne plus fonctionner.
-
-
-
-
-
-Logique algorithmique :
-
-
+## 4. Démarche algorithmique
 
 
 DEBUT
@@ -150,4 +172,20 @@ DEBUT
     Afficher la fin des cinq analyses
 
 Fin
-  
+
+
+
+## 5. Limites et perspectives
+
+### Limites
+
+- Le nettoyage peut exclure certaines données incomplètes.
+- La classification par mots-clés peut produire des erreurs si les libellés évoluent.
+- Les pourcentages d’installations ne constituent pas des parts de marché en nombre d’abonnés.
+- Le regroupement par date de mise en service ne suffit pas à reconstituer l’état historique complet du réseau.
+
+
+**Projet pédagogique — SAÉ 15 — Groupe D1**
+
+Source des données : Agence nationale des fréquences (ANFR).
+
