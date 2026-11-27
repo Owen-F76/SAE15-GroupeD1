@@ -1,6 +1,8 @@
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
+import folium
+from folium.plugins import FastMarkerCluster
 
 dossier_data = Path.cwd() / "data"
 
@@ -16,7 +18,7 @@ fichiers = {
     "support": "sup_support.txt",
 }
 
-# 1. chargement + nettoyage (version 1)
+# 1. chargement + nettoyage
 
 # chargement + suppression des lignes vides
 donnees = {}
@@ -215,3 +217,77 @@ plt.legend(title="Technologie")
 plt.tight_layout()
 plt.savefig(dossier_resultat / "analyse5_exploitants_technologies.png", dpi=150)
 plt.close()
+
+
+# 8. carte interactive de toutes les installations (version 3)
+
+carte_support = support.copy()
+
+# calcul de la latitude
+carte_support["latitude"] = (
+    carte_support["COR_NB_DG_LAT"]
+    + carte_support["COR_NB_MN_LAT"] / 60
+    + carte_support["COR_NB_SC_LAT"] / 3600
+)
+
+# calcul de la longitude
+carte_support["longitude"] = (
+    carte_support["COR_NB_DG_LON"]
+    + carte_support["COR_NB_MN_LON"] / 60
+    + carte_support["COR_NB_SC_LON"] / 3600
+)
+
+# application des hemispheres (sud et ouest = valeurs negatives)
+carte_support.loc[
+    carte_support["COR_CD_NS_LAT"].astype(str).str.upper() == "S", "latitude"
+] *= -1
+
+carte_support.loc[
+    carte_support["COR_CD_EW_LON"].astype(str).str.upper() == "W", "longitude"
+] *= -1
+
+# conservation des coordonnees valides, limitees a la france metropolitaine
+carte_support = carte_support.dropna(subset=["latitude", "longitude"])
+carte_support = carte_support[
+    carte_support["latitude"].between(41, 52)
+    & carte_support["longitude"].between(-6, 10)
+]
+
+# creation de la carte
+carte = folium.Map(location=[46.6, 2.5], zoom_start=6, tiles=None)
+
+# fond de carte principal : esri worldstreetmap
+folium.TileLayer(
+    tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+    attr="Tiles &copy; Esri",
+    name="Esri WorldStreetMap",
+    overlay=False,
+    control=True,
+    show=True,
+).add_to(carte)
+
+# fond alternatif epure : esri worldgraycanvas
+folium.TileLayer(
+    tiles="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+    attr="Tiles &copy; Esri",
+    name="Esri Gray Canvas",
+    overlay=False,
+    control=True,
+    show=False,
+).add_to(carte)
+
+# ajout des installations (marqueurs regroupes)
+coordonnees = list(zip(carte_support["latitude"], carte_support["longitude"]))
+
+FastMarkerCluster(
+    data=coordonnees, name="Installations radioélectriques"
+).add_to(carte)
+
+# controle des couches
+folium.LayerControl().add_to(carte)
+
+# enregistrement de la carte
+chemin_carte = dossier_resultat / "carte_radioelectrique.html"
+carte.save(str(chemin_carte))
+
+print("carte creee, supports affiches:", len(coordonnees))
