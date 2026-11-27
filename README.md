@@ -59,7 +59,9 @@ Puis ouvrir ce dossier dans VS Code.
 Dans le terminal, exécuter :
 pip install pandas matplotlib
 
-4. Lancer le programme
+4. mettre le dossier data doit être aux mêmes endroits que le scripte 
+
+5. Lancer le programme
 
 
 
